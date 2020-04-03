@@ -28,50 +28,87 @@ module.exports = {
       };
     }
   },
-  setNewPassword: async function (old_password, new_password, token) {
+  createNewUser: async function (user_name, email, password) {
     try {
-
-      const data = jwt.decode(token, process.env.ACCESS_TOKEN_SECRET || '12345');
-      const user = await User.findOne({ user_name: data.user.user_name });
-
-      if(new_password.length < 6){
-        return {
-          status: 406,
-          message: "New Password length is not correct"
-        };
+      let errors = [];
+      // Check required fields
+      if (!user_name || !email || !password) {
+        errors.push({ message: "Please fill in all fields" });
       }
-
-      if(!user){
+      // Check password length
+      if (password.length < 6) {
+        errors.push({ message: "Password should be at least 6 characters"});
+      }
+    
+      if (errors.length > 0) {
         return {
-          status: 404,
-          message: "User is not found"
-        };
+          status: 403,
+          errors
+        }
       } else {
-        const isMatch = await PasswordService.comparePassword(old_password, user.password);
-        if(isMatch){
-          const hash = await PasswordService.hashPassword(new_password);
-          // Set hashed password
-          user.password = hash;
-          // Save new password
-          user.save();
-          return {
-            status: 200,
-            message: "Password has changed"
-          }; 
-
-        } else {
+        // Validation passed
+        let user = await User.findOne({ user_name: user_name });
+        if(user){
             return {
-              status: 403,
-              message: 'Old Password is incorrect'
+              status: 406,
+              message: 'Username exits! Please try another username!'
             }
+        } else {
+          const newUser = await new User({
+            user_name,
+            email,
+            password
+          });
+          
+          // Hash Password
+          const hash = await PasswordService.hashPassword(newUser.password);
+          // Set hashed password
+          newUser.password = hash;
+          // Save User
+          await newUser.save()
+
+          return {
+            status: 201,
+            message: "User is created"
+          };
+        }
+      } 
+    } catch (error) {
+      return {
+        status: 500,
+        error
+      };
+    }
+  },
+  userLogin: async function (user_name, password) {
+    try {
+      // Match User
+      let user = await User.findOne({user_name: user_name})
+    
+      if (!user) {
+        res.json({message: 'That user is not registered'});
+      } 
+      // Match password
+      const isMatch = await PasswordService.comparePassword(password, user.password);
+      if(isMatch){
+        // Assign a token to user
+        const token  = await jwt.sign({user: user}, process.env.ACCESS_TOKEN_SECRET || '12345');
+        return {
+          status: 200,
+          token
+        }
+      } else {
+        return {
+          status: 403,
+          message: 'Username or password are incorrect'
         }
       }
     } catch (error) {
-        return {
-          status: 500,
-          message: "Problem occurred to set new password",
-          error: error
-        }
+      return {
+        status: 403,
+        message: "Problem occurred trying to login",
+        error: error
+      };
     }
   },
   getUserByID: async function (id) {

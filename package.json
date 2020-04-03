@@ -1,13 +1,13 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "description": "test api for povio",
+  "description": "test app",
   "main": "index.js",
   "scripts": {
     "start": "nodemon app.js",
     "test": "mocha --recursive --exit"
   },
-  "author": "Clirim Ajeti",
+  "author": "Flutra Leci",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",

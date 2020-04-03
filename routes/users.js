@@ -5,25 +5,45 @@ const router = express.Router();
 const { isAuthenticated } = require('../config/auth');
 
 // Controller for the Like & Unlike feature
-const LikeController = require('../controllers/LikeController');
-const ProfileController = require('../controllers/ProfileController');
+const UserController = require('../controllers/UserController');
+const User = require('../models/User');
 
+
+// Wellcome route
+router.get('/', (req, res) => {
+  res.json({
+    message: "Home"
+  })
+});
 
 // Get user data 
 router.get('/:id', 
-  ProfileController.getUser
-  );
-
-// Like a user
-router.post('/:id/like', 
-  isAuthenticated, 
-  LikeController.likeUser
+  UserController.getUser
 );
 
-// Unlike a user
-router.post('/:id/unlike',
-  isAuthenticated, 
-  LikeController.unlikeUser
+router.get('/me', 
+  isAuthenticated,
+  UserController.getLoggedInUser
 );
 
+// Signup handle
+router.post('/signup',
+  UserController.createUser 
+);
+
+// Login handle
+router.post('/login', 
+  UserController.login   
+);
+
+router.delete('/users', (req, res, next)=>{
+  User.deleteMany({ email: /test@test.com/}).then(() =>{
+    res.json({
+      message: "deleted"
+    })
+  })
+})
+
+
+  UserService
 module.exports = router;
